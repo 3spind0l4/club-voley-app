@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club de Voley - Panel del Socio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: #f5f6fa;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #2E8B57, #228B22);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 30px 20px;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            font-size: 1.8em;
+            margin-bottom: 40px;
+        }
+
+        .menu {
+            list-style: none;
+        }
+
+        .menu li {
+            margin: 20px 0;
+        }
+
+        .menu a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .menu a:hover, .menu a.active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .menu a i {
+            margin-right: 10px;
+        }
+
+        .logout {
+            text-align: center;
+        }
+
+        .logout a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .logout a:hover {
+            background: rgba(255,255,255,0.35);
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            color: #2E8B57;
+        }
+
+        .user-info {
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Cards */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 25px;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            margin-bottom: 10px;
+            color: #2E8B57;
+        }
+
+        .card p {
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                justify-content: space-around;
+                padding: 15px;
+            }
+            .sidebar h2 {
+                display: none;
+            }
+            .main-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div>
+            <h2>VOLEY CLUB</h2>
+            <ul class="menu">
+                <li><a href="/home" class="active">🏠 Inicio</a></li>
+                <li><a href="/calendario">📅 Calendario</a></li>
+                <li><a href="/cuotas">💳 Mis Cuotas</a></li>
+                <li><a href="/clases">🏐 Mis Clases</a></li>
+                <li><a href="/perfil">👤 Mi Perfil</a></li>
+            </ul>
+        </div>
+        <div class="logout">
+            <a href="/logout">🚪 Cerrar Sesión</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <h1>Bienvenido, {{ user.nombre if user else 'Socio' }}</h1>
+            <div class="user-info">{{ user.tipo if user else 'Socio Activo' }}</div>
+        </header>
+
+        <div class="cards">
+            <div class="card">
+                <h3>📅 Próximo Partido</h3>
+                <p>Domingo 16 de noviembre - 18:00 hs</p>
+                <p>Cancha 3 - Club Central</p>
+            </div>
+
+            <div class="card">
+                <h3>💳 Estado de Cuotas</h3>
+                <p>Último pago: Octubre 2025</p>
+                <p>Cuota de noviembre pendiente</p>
+            </div>
+
+            <div class="card">
+                <h3>🏐 Próxima Clase</h3>
+                <p>Miércoles 13 de noviembre - 19:00 hs</p>
+                <p>Entrenador: Prof. Ramírez</p>
+            </div>
+
+            <div class="card">
+                <h3>📢 Noticias del Club</h3>
+                <p>¡Gran torneo interclubes este mes! No te lo pierdas.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
