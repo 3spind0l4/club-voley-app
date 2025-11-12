@@ -11,6 +11,17 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+# Verificar y crear BD si no existe
+def check_and_init_db():
+    try:
+        conn = get_db_connection()
+        conn.execute("SELECT 1 FROM usuarios LIMIT 1")
+        conn.close()
+        print("✅ Base de datos verificada correctamente")
+    except sqlite3.OperationalError:
+        print("🔄 Base de datos no existe. Creando tablas...")
+        init_db()
+
 # Crear tablas si no existen
 def init_db():
     conn = get_db_connection()
@@ -68,8 +79,9 @@ def init_db():
             ('admin@club.com', 'admin123', 'admin', 'CLUB2024')
         )
         conn.commit()
-    except:
-        pass
+        print("✅ Usuarios de prueba creados")
+    except Exception as e:
+        print(f"⚠️ Error creando usuarios: {e}")
     
     conn.close()
 
@@ -95,21 +107,35 @@ def login():
         session['user_id'] = user['id']
         session['user_type'] = user['tipo']
         session['user_email'] = user['email']
-        return f'''
-        <h1>¡Bienvenido {user['email']}!</h1>
-        <p>Tipo de usuario: <strong>{user['tipo']}</strong></p>
-        <a href="/">Volver al Login</a>
-        '''
+        # CORRECCIÓN: Redirigir al dashboard
+        return redirect('/dashboard')
     else:
         return "❌ Credenciales incorrectas. <a href='/'>Volver</a>"
+
+# Ruta del dashboard
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    conn = get_db_connection()
+    user = conn.execute(
+        'SELECT * FROM usuarios WHERE id = ?', 
+        (session['user_id'],)
+    ).fetchone()
+    conn.close()
+    
+    return render_template('dashboard.html', user=user)
 
 if __name__ == '__main__':
     # Crear carpeta instance si no existe
     if not os.path.exists('instance'):
         os.makedirs('instance')
     
-    # Inicializar base de datos
-    init_db()
+    # Verificar y crear BD si es necesario
+    check_and_init_db()
+    
+    print("🚀 Servidor iniciado correctamente")
     
     # PARA RENDER - CONFIGURACIÓN CLOUD
     port = int(os.environ.get('PORT', 5000))
