@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 import os
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta_del_club_voley_2024'
@@ -53,7 +54,7 @@ def init_db():
         )
     ''')
     
-    # Tabla de pagos
+    # Tabla de pagos - ACTUALIZADA CON SISTEMA DE CONFIRMACIÓN
     conn.execute('''
         CREATE TABLE IF NOT EXISTS pagos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,6 +65,11 @@ def init_db():
             estado TEXT NOT NULL,
             metodo_pago TEXT,
             comprobante_url TEXT,
+            estado_confirmacion TEXT DEFAULT 'pendiente',
+            confirmado_por INTEGER,
+            fecha_confirmacion TIMESTAMP,
+            validado_por INTEGER,
+            fecha_validacion TIMESTAMP,
             FOREIGN KEY (jugador_id) REFERENCES jugadores (id)
         )
     ''')
@@ -78,6 +84,13 @@ def init_db():
             "INSERT OR IGNORE INTO usuarios (email, password, tipo, codigo_invitacion) VALUES (?, ?, ?, ?)",
             ('admin@club.com', 'admin123', 'admin', 'CLUB2024')
         )
+        
+        # Insertar datos de prueba en jugadores
+        conn.execute(
+            "INSERT OR IGNORE INTO jugadores (usuario_id, nombre, apellido, telefono, posicion, categoria) VALUES (?, ?, ?, ?, ?, ?)",
+            (1, 'Jugador', 'Demo', '123456789', 'Armador', 'Mayores')
+        )
+        
         conn.commit()
         print("✅ Usuarios de prueba creados")
     except Exception as e:
@@ -107,43 +120,13 @@ def login():
         session['user_id'] = user['id']
         session['user_type'] = user['tipo']
         session['user_email'] = user['email']
-        # CORRECCIÓN: Redirigir al dashboard
         return redirect('/dashboard')
     else:
         return "❌ Credenciales incorrectas. <a href='/'>Volver</a>"
 
-# Ruta del dashboard
+# Ruta del DASHBOARD MEJORADO
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session:
-        return redirect('/')
-    
-    conn = get_db_connection()
-    user = conn.execute(
-        'SELECT * FROM usuarios WHERE id = ?', 
-        (session['user_id'],)
-    ).fetchone()
-    conn.close()
-    
-    return render_template('dashboard.html', user=user)
-# Ruta de inicio (nuevo dashboard)
-@app.route('/inicio')
-def inicio():
-    if 'user_id' not in session:
-        return redirect('/')
-    
-    conn = get_db_connection()
-    user = conn.execute(
-        'SELECT * FROM usuarios WHERE id = ?', 
-        (session['user_id'],)
-    ).fetchone()
-    conn.close()
-    
-    return render_template('inicio.html')
-
-# Ruta de pagos (página independiente)
-@app.route('/pagos')
-def pagos():
     if 'user_id' not in session:
         return redirect('/')
     
@@ -161,38 +144,103 @@ def pagos():
     
     conn.close()
     
-    return render_template('pagos.html', user=user, pagos=pagos)
+    return render_template('dashboard.html', user=user, pagos=pagos)
 
-# Ruta de calendario (placeholder)
-@app.route('/calendario')
-def calendario():
+# Ruta para confirmar pago
+@app.route('/confirmar_pago', methods=['POST'])
+def confirmar_pago():
     if 'user_id' not in session:
         return redirect('/')
     
-    return render_template('calendario.html')
+    mes_año = request.form['mes_año']
+    metodo_pago = request.form['metodo_pago']
+    
+    conn = get_db_connection()
+    
+    # Verificar si ya existe un pago para este mes
+    pago_existente = conn.execute(
+        'SELECT * FROM pagos WHERE jugador_id = ? AND mes_año = ?',
+        (session['user_id'], mes_año)
+    ).fetchone()
+    
+    if pago_existente:
+        # Actualizar pago existente
+        conn.execute(
+            '''UPDATE pagos SET 
+               metodo_pago = ?, estado_confirmacion = 'confirmado',
+               confirmado_por = ?, fecha_confirmacion = ?
+               WHERE id = ?''',
+            (metodo_pago, session['user_id'], datetime.now(), pago_existente['id'])
+        )
+    else:
+        # Crear nuevo pago
+        conn.execute(
+            '''INSERT INTO pagos 
+               (jugador_id, mes_año, monto, estado, metodo_pago, estado_confirmacion, confirmado_por, fecha_confirmacion) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+            (session['user_id'], mes_año, 5000, 'pendiente', metodo_pago, 'confirmado', session['user_id'], datetime.now())
+        )
+    
+    conn.commit()
+    conn.close()
+    
+    return redirect('/dashboard')
 
-# Ruta de perfil (placeholder)
-@app.route('/perfil')
-def perfil():
-    if 'user_id' not in session:
+# Ruta para ver todos los pagos (admin)
+@app.route('/admin/pagos')
+def admin_pagos():
+    if 'user_id' not in session or session['user_type'] != 'admin':
         return redirect('/')
     
     conn = get_db_connection()
-    user = conn.execute(
-        'SELECT * FROM usuarios WHERE id = ?', 
-        (session['user_id'],)
-    ).fetchone()
+    pagos = conn.execute('''
+        SELECT p.*, u.email, j.nombre, j.apellido 
+        FROM pagos p 
+        JOIN usuarios u ON p.jugador_id = u.id 
+        JOIN jugadores j ON p.jugador_id = j.usuario_id 
+        ORDER BY p.mes_año DESC, p.estado_confirmacion
+    ''').fetchall()
     conn.close()
     
-    return render_template('perfil.html', user=user)
+    return render_template('admin_pagos.html', pagos=pagos)
 
-# Ruta de configuración (placeholder)
-@app.route('/configuracion')
-def configuracion():
-    if 'user_id' not in session:
+# Ruta para validar pago (admin)
+@app.route('/validar_pago/<int:pago_id>')
+def validar_pago(pago_id):
+    if 'user_id' not in session or session['user_type'] != 'admin':
         return redirect('/')
     
-    return render_template('configuracion.html')
+    conn = get_db_connection()
+    conn.execute(
+        '''UPDATE pagos SET 
+           estado_confirmacion = 'validado',
+           validado_por = ?, fecha_validacion = ?
+           WHERE id = ?''',
+        (session['user_id'], datetime.now(), pago_id)
+    )
+    conn.commit()
+    conn.close()
+    
+    return redirect('/admin/pagos')
+
+# Ruta para rechazar pago (admin)
+@app.route('/rechazar_pago/<int:pago_id>')
+def rechazar_pago(pago_id):
+    if 'user_id' not in session or session['user_type'] != 'admin':
+        return redirect('/')
+    
+    conn = get_db_connection()
+    conn.execute(
+        '''UPDATE pagos SET 
+           estado_confirmacion = 'rechazado',
+           validado_por = ?, fecha_validacion = ?
+           WHERE id = ?''',
+        (session['user_id'], datetime.now(), pago_id)
+    )
+    conn.commit()
+    conn.close()
+    
+    return redirect('/admin/pagos')
 
 if __name__ == '__main__':
     # Crear carpeta instance si no existe
@@ -203,7 +251,9 @@ if __name__ == '__main__':
     check_and_init_db()
     
     print("🚀 Servidor iniciado correctamente")
+    print("👤 Usuario prueba: jugador@club.com / 123456")
+    print("🔧 Admin prueba: admin@club.com / admin123")
     
     # PARA RENDER - CONFIGURACIÓN CLOUD
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False) 
+    app.run(host='0.0.0.0', port=port, debug=False)
