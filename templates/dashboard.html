@@ -3,31 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Club de Voley</title>
+    <title>Club de Voley - Dashboard</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
         }
 
         body {
-            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
-                        url('/static/images/fondo-home.jpeg');
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/static/images/fondo-voley.jpg');
             background-size: cover;
             background-position: center;
+            background-attachment: fixed;
             min-height: 100vh;
-            color: #333;
+            padding: 20px;
         }
 
         .header {
             background: rgba(255, 255, 255, 0.95);
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 20px;
         }
 
         .logo h1 {
@@ -57,15 +59,15 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
         }
 
         .welcome-section {
             background: rgba(255, 255, 255, 0.95);
             padding: 30px;
             border-radius: 15px;
-            margin-bottom: 20px;
             text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
         .welcome-section h2 {
@@ -124,6 +126,107 @@
             font-size: 0.9em;
         }
 
+        /* SECCIÓN PAGOS NUEVA */
+        .pagos-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            color: #2E8B57;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .confirmar-pago-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .confirmar-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .confirmar-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .pagos-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .pagos-table th, .pagos-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .pagos-table th {
+            background: #2E8B57;
+            color: white;
+        }
+
+        .estado-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .estado-pendiente {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .estado-confirmado {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .estado-validado {
+            background: #28a745;
+            color: white;
+        }
+
+        .estado-rechazado {
+            background: #dc3545;
+            color: white;
+        }
+
         .profile-section {
             background: rgba(255, 255, 255, 0.95);
             padding: 30px;
@@ -148,11 +251,6 @@
             color: white;
             font-size: 2em;
             margin-right: 20px;
-        }
-
-        .profile-info h3 {
-            color: #2E8B57;
-            margin-bottom: 5px;
         }
 
         .profile-details {
@@ -198,6 +296,18 @@
             transform: translateY(-2px);
         }
 
+        .admin-link {
+            display: block;
+            text-align: center;
+            background: #6f42c1;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -205,11 +315,18 @@
             }
             
             .user-info {
+                text-align: center;
                 margin-top: 10px;
             }
             
-            .stats-grid {
-                grid-template-columns: 1fr;
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-avatar {
+                margin-right: 0;
+                margin-bottom: 15px;
             }
         }
     </style>
@@ -218,11 +335,11 @@
     <!-- Header -->
     <div class="header">
         <div class="logo">
-            <h1>🏐 VOLEY CLUB</h1>
+            <h1>🏐 Club de Voley</h1>
         </div>
         <div class="user-info">
             <div class="email">{{ user.email }}</div>
-            <div class="type">Tipo: <strong>{{ user.tipo }}</strong></div>
+            <div class="type">Tipo: <strong>{{ user.tipo | upper }}</strong></div>
             <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
         </div>
     </div>
@@ -232,15 +349,15 @@
         <!-- Sección de Bienvenida -->
         <div class="welcome-section">
             <h2>¡Bienvenido al Sistema del Club!</h2>
-            <p>Gestioná tu información, pagos y asistencia</p>
+            <p>Gestiona tus pagos, asistencias y perfil desde aquí</p>
         </div>
 
         <!-- Estadísticas Rápidas -->
         <div class="stats-grid">
             <div class="stat-card payment">
-                <div class="stat-icon">💳</div>
-                <div class="stat-value paid">AL DÍA</div>
-                <div class="stat-label">Estado de Cuota</div>
+                <div class="stat-icon">💰</div>
+                <div class="stat-value pending">PENDIENTE</div>
+                <div class="stat-label">Estado de Cuota Actual</div>
             </div>
             
             <div class="stat-card attendance">
@@ -254,6 +371,102 @@
                 <div class="stat-value">MAÑANA</div>
                 <div class="stat-label">Próximo Entrenamiento</div>
             </div>
+        </div>
+
+        <!-- SECCIÓN PAGOS NUEVA -->
+        <div class="pagos-section">
+            <h3 class="section-title">💰 Sistema de Pagos</h3>
+            
+            <!-- Formulario para confirmar pago -->
+            <div class="confirmar-pago-form">
+                <h4>Confirmar Mi Pago</h4>
+                <form action="/confirmar_pago" method="post">
+                    <div class="form-group">
+                        <label for="mes_año">Mes a Pagar:</label>
+                        <select id="mes_año" name="mes_año" required>
+                            <option value="">Seleccionar mes...</option>
+                            <option value="2024-11">Noviembre 2024</option>
+                            <option value="2024-12">Diciembre 2024</option>
+                            <option value="2025-01">Enero 2025</option>
+                            <option value="2025-02">Febrero 2025</option>
+                            <option value="2025-03">Marzo 2025</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="metodo_pago">Método de Pago:</label>
+                        <select id="metodo_pago" name="metodo_pago" required>
+                            <option value="">Seleccionar método...</option>
+                            <option value="efectivo">💵 Efectivo</option>
+                            <option value="transferencia">🏦 Transferencia</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="confirmar-btn">
+                        ✅ Confirmar Pago
+                    </button>
+                </form>
+            </div>
+
+            <!-- Historial de Pagos -->
+            <h4>Mi Historial de Pagos</h4>
+            {% if pagos %}
+            <table class="pagos-table">
+                <thead>
+                    <tr>
+                        <th>Mes</th>
+                        <th>Método</th>
+                        <th>Estado</th>
+                        <th>Fecha Confirmación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pago in pagos %}
+                    <tr>
+                        <td>{{ pago.mes_año }}</td>
+                        <td>
+                            {% if pago.metodo_pago == 'efectivo' %}
+                                💵 Efectivo
+                            {% elif pago.metodo_pago == 'transferencia' %}
+                                🏦 Transferencia
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if pago.estado_confirmacion == 'pendiente' %}
+                                <span class="estado-badge estado-pendiente">PENDIENTE</span>
+                            {% elif pago.estado_confirmacion == 'confirmado' %}
+                                <span class="estado-badge estado-confirmado">CONFIRMADO</span>
+                            {% elif pago.estado_confirmacion == 'validado' %}
+                                <span class="estado-badge estado-validado">VALIDADO ✅</span>
+                            {% elif pago.estado_confirmacion == 'rechazado' %}
+                                <span class="estado-badge estado-rechazado">RECHAZADO</span>
+                            {% else %}
+                                <span class="estado-badge estado-pendiente">PENDIENTE</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if pago.fecha_confirmacion %}
+                                {{ pago.fecha_confirmacion[:10] }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No hay pagos registrados todavía.</p>
+            {% endif %}
+
+            <!-- Link para admin -->
+            {% if user.tipo == 'admin' %}
+            <a href="/admin/pagos" class="admin-link">
+                🔧 Panel de Administración de Pagos
+            </a>
+            {% endif %}
         </div>
 
         <!-- Perfil del Jugador -->
@@ -290,18 +503,34 @@
 
         <!-- Acciones Rápidas -->
         <div class="actions-grid">
-            <button class="action-btn">📊 Ver Mis Estadísticas</button>
-            <button class="action-btn">💳 Gestionar Pagos</button>
-            <button class="action-btn">📅 Calendario</button>
-            <button class="action-btn">👥 Contactar Profesor</button>
+            <button class="action-btn" onclick="verCalendario()">📅 Ver Calendario</button>
+            <button class="action-btn" onclick="verAsistencias()">✅ Mis Asistencias</button>
+            <button class="action-btn" onclick="contactarProfesor()">📞 Contactar Profesor</button>
+            <button class="action-btn" onclick="verHorarios()">🕒 Horarios</button>
         </div>
     </div>
 
     <script>
         function logout() {
             if (confirm('¿Estás seguro de que querés cerrar sesión?')) {
-                window.location.href = '/';
+                window.location.href = "/";
             }
+        }
+        
+        function verCalendario() {
+            alert('Próximamente: Calendario de partidos y entrenamientos');
+        }
+        
+        function verAsistencias() {
+            alert('Próximamente: Historial de asistencias');
+        }
+        
+        function contactarProfesor() {
+            alert('Próximamente: Formulario de contacto');
+        }
+        
+        function verHorarios() {
+            alert('Próximamente: Horarios de entrenamiento');
         }
     </script>
 </body>
