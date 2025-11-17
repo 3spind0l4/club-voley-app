@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Club de Voley{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/static/images/fondo-voley.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        /* MENÚ HAMBURGUESA */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            color: #2E8B57;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #2E8B57;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            transition: left 0.3s ease;
+            z-index: 1001;
+            padding: 20px;
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #2E8B57;
+        }
+
+        .close-menu {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .user-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            background: #2E8B57;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2em;
+            margin: 0 auto 15px;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 10px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            color: #333;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: #2E8B57;
+            color: white;
+        }
+
+        .nav-icon {
+            margin-right: 15px;
+            font-size: 1.2em;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .content {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menú Hamburguesa -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">🏐 Club Voley</div>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        </div>
+    </nav>
+
+    <!-- Sidebar Menu -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>Menú</h3>
+            <button class="close-menu" onclick="toggleMenu()">×</button>
+        </div>
+        
+        <div class="user-info">
+            <div class="user-avatar">
+                {{ session.user_email[0].upper() if session.user_email else 'U' }}
+            </div>
+            <div class="user-email">{{ session.user_email }}</div>
+            <div class="user-type">{{ session.user_type | upper }}</div>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="/inicio" class="nav-link">
+                    <span class="nav-icon">🏠</span>
+                    Inicio
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/pagos" class="nav-link">
+                    <span class="nav-icon">💰</span>
+                    Pagos
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/calendario" class="nav-link">
+                    <span class="nav-icon">📅</span>
+                    Calendario
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/perfil" class="nav-link">
+                    <span class="nav-icon">👤</span>
+                    Perfil
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/configuracion" class="nav-link">
+                    <span class="nav-icon">⚙️</span>
+                    Configuración
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/" class="nav-link" onclick="logout()">
+                    <span class="nav-icon">🚪</span>
+                    Cerrar Sesión
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <!-- Contenido Principal -->
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        function logout() {
+            if (confirm('¿Estás seguro de que querés cerrar sesión?')) {
+                window.location.href = "/";
+            }
+        }
+
+        // Cerrar menú al hacer clic en un link
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                toggleMenu();
+            });
+        });
+    </script>
+</body>
+</html>

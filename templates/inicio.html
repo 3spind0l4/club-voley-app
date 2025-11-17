@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - Club de Voley{% endblock %}
+
+{% block content %}
+<div class="welcome-section card">
+    <h2>¡Bienvenido al Sistema del Club!</h2>
+    <p>Gestiona tus pagos, asistencias y perfil desde el menú de navegación</p>
+</div>
+
+<!-- Estadísticas Rápidas -->
+<div class="stats-grid">
+    <div class="stat-card payment">
+        <div class="stat-icon">💰</div>
+        <div class="stat-value pending">PENDIENTE</div>
+        <div class="stat-label">Estado de Cuota Actual</div>
+    </div>
+    
+    <div class="stat-card attendance">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value">85%</div>
+        <div class="stat-label">Asistencia Mensual</div>
+    </div>
+    
+    <div class="stat-card next-training">
+        <div class="stat-icon">📅</div>
+        <div class="stat-value">MAÑANA</div>
+        <div class="stat-label">Próximo Entrenamiento</div>
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="card">
+    <h3 style="color: #2E8B57; margin-bottom: 20px;">Acciones Rápidas</h3>
+    <div class="actions-grid">
+        <button class="action-btn" onclick="window.location.href='/pagos'">
+            <span style="font-size: 2em; display: block; margin-bottom: 10px;">💰</span>
+            Gestionar Pagos
+        </button>
+        <button class="action-btn" onclick="window.location.href='/calendario'">
+            <span style="font-size: 2em; display: block; margin-bottom: 10px;">📅</span>
+            Ver Calendario
+        </button>
+        <button class="action-btn" onclick="window.location.href='/perfil'">
+            <span style="font-size: 2em; display: block; margin-bottom: 10px;">👤</span>
+            Mi Perfil
+        </button>
+        <button class="action-btn" onclick="contactarProfesor()">
+            <span style="font-size: 2em; display: block; margin-bottom: 10px;">📞</span>
+            Contactar Profesor
+        </button>
+    </div>
+</div>
+
+<!-- Próximos Eventos -->
+<div class="card">
+    <h3 style="color: #2E8B57; margin-bottom: 20px;">Próximos Eventos</h3>
+    <div class="eventos-list">
+        <div class="evento-item">
+            <span class="evento-fecha">📅 20 NOV</span>
+            <span class="evento-descripcion">Entrenamiento regular - 19:00 hs</span>
+        </div>
+        <div class="evento-item">
+            <span class="evento-fecha">📅 25 NOV</span>
+            <span class="evento-descripcion">Partido vs Club Amigos - 16:00 hs</span>
+        </div>
+        <div class="evento-item">
+            <span class="evento-fecha">📅 30 NOV</span>
+            <span class="evento-descripcion">Vencimiento cuota mensual</span>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 25px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .stat-card.payment {
+        border-left: 5px solid #28a745;
+    }
+
+    .stat-card.attendance {
+        border-left: 5px solid #007bff;
+    }
+
+    .stat-card.next-training {
+        border-left: 5px solid #ffc107;
+    }
+
+    .stat-icon {
+        font-size: 2.5em;
+        margin-bottom: 15px;
+    }
+
+    .stat-value {
+        font-size: 1.8em;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+
+    .stat-value.pending {
+        color: #dc3545;
+    }
+
+    .stat-label {
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .action-btn {
+        background: linear-gradient(135deg, #2E8B57, #228B22);
+        color: white;
+        border: none;
+        padding: 20px;
+        border-radius: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: transform 0.2s;
+        text-align: center;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-3px);
+    }
+
+    .eventos-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .evento-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #2E8B57;
+    }
+
+    .evento-fecha {
+        font-weight: bold;
+        color: #2E8B57;
+        min-width: 100px;
+    }
+
+    .evento-descripcion {
+        color: #333;
+        margin-left: 15px;
+    }
+
+    .welcome-section {
+        text-align: center;
+    }
+
+    .welcome-section h2 {
+        color: #2E8B57;
+        margin-bottom: 10px;
+        font-size: 1.8em;
+    }
+
+    .welcome-section p {
+        color: #666;
+        font-size: 1.1em;
+    }
+</style>
+
+<script>
+    function contactarProfesor() {
+        alert('Próximamente: Formulario de contacto con profesores');
+    }
+</script>
+{% endblock %}

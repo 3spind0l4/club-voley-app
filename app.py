@@ -126,6 +126,78 @@ def dashboard():
     conn.close()
     
     return render_template('dashboard.html', user=user)
+# Ruta de inicio (nuevo dashboard)
+@app.route('/inicio')
+def inicio():
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    conn = get_db_connection()
+    user = conn.execute(
+        'SELECT * FROM usuarios WHERE id = ?', 
+        (session['user_id'],)
+    ).fetchone()
+    conn.close()
+    
+    return render_template('inicio.html')
+
+# Ruta de pagos (página independiente)
+@app.route('/pagos')
+def pagos():
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    conn = get_db_connection()
+    user = conn.execute(
+        'SELECT * FROM usuarios WHERE id = ?', 
+        (session['user_id'],)
+    ).fetchone()
+    
+    # Obtener pagos del jugador
+    pagos = conn.execute(
+        'SELECT * FROM pagos WHERE jugador_id = ? ORDER BY mes_año DESC',
+        (session['user_id'],)
+    ).fetchall()
+    
+    conn.close()
+    
+    return render_template('pagos.html', user=user, pagos=pagos)
+
+# Ruta de calendario (placeholder)
+@app.route('/calendario')
+def calendario():
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    return render_template('calendario.html')
+
+# Ruta de perfil (placeholder)
+@app.route('/perfil')
+def perfil():
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    conn = get_db_connection()
+    user = conn.execute(
+        'SELECT * FROM usuarios WHERE id = ?', 
+        (session['user_id'],)
+    ).fetchone()
+    conn.close()
+    
+    return render_template('perfil.html', user=user)
+
+# Ruta de configuración (placeholder)
+@app.route('/configuracion')
+def configuracion():
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    return render_template('configuracion.html')
+
+# Y CAMBIÁ la ruta /dashboard para que redirija a /inicio
+@app.route('/dashboard')
+def dashboard():
+    return redirect('/inicio')
 
 if __name__ == '__main__':
     # Crear carpeta instance si no existe
