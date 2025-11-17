@@ -194,11 +194,6 @@ def configuracion():
     
     return render_template('configuracion.html')
 
-# Y CAMBIÁ la ruta /dashboard para que redirija a /inicio
-@app.route('/dashboard')
-def dashboard():
-    return redirect('/inicio')
-
 if __name__ == '__main__':
     # Crear carpeta instance si no existe
     if not os.path.exists('instance'):
