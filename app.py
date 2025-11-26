@@ -4,27 +4,32 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'clave_secreta_del_club_voley_2024'
+app.secret_key = os.environ.get('SECRET_KEY', 'clave_secreta_del_club_voley_2024')
 
-# Función para conectar a la BD
+# Función para conectar a la BD - CORREGIDA
 def get_db_connection():
-    db_path = os.path.join(os.getcwd(), 'instance', 'club_voley.db')
-    
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    # En Render.com, usa el directorio de trabajo del proyecto
+    if 'RENDER' in os.environ:
+        db_path = os.path.join(os.getcwd(), 'club_voley.db')
+    else:
+        # Desarrollo local
+        db_path = os.path.join(os.getcwd(), 'instance', 'club_voley.db')
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
     
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
-# Verificar y crear BD si no existe
+# Verificar y crear BD si no existe - CORREGIDA
 def check_and_init_db():
     try:
         conn = get_db_connection()
+        # Verificar si la tabla usuarios existe
         conn.execute("SELECT 1 FROM usuarios LIMIT 1")
         conn.close()
         print("✅ Base de datos verificada correctamente")
-    except sqlite3.OperationalError:
-        print("🔄 Base de datos no existe. Creando tablas...")
+    except sqlite3.OperationalError as e:
+        print(f"🔄 Base de datos no existe. Creando tablas... Error: {e}")
         init_db()
 
 # Crear tablas si no existen
@@ -58,7 +63,7 @@ def init_db():
         )
     ''')
     
-    # Tabla de pagos - ACTUALIZADA CON SISTEMA DE CONFIRMACIÓN
+    # Tabla de pagos
     conn.execute('''
         CREATE TABLE IF NOT EXISTS pagos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,18 +94,36 @@ def init_db():
             ('admin@club.com', 'admin123', 'admin', 'CLUB2024')
         )
         
-        # Insertar datos de prueba en jugadores
-        conn.execute(
-            "INSERT OR IGNORE INTO jugadores (usuario_id, nombre, apellido, telefono, posicion, categoria) VALUES (?, ?, ?, ?, ?, ?)",
-            (1, 'Jugador', 'Demo', '123456789', 'Armador', 'Mayores')
-        )
+        # Obtener el ID del usuario jugador para insertar en jugadores
+        usuario_jugador = conn.execute(
+            "SELECT id FROM usuarios WHERE email = ?", 
+            ('jugador@club.com',)
+        ).fetchone()
+        
+        if usuario_jugador:
+            conn.execute(
+                "INSERT OR IGNORE INTO jugadores (usuario_id, nombre, apellido, telefono, posicion, categoria) VALUES (?, ?, ?, ?, ?, ?)",
+                (usuario_jugador['id'], 'Jugador', 'Demo', '123456789', 'Armador', 'Mayores')
+            )
         
         conn.commit()
         print("✅ Usuarios de prueba creados")
     except Exception as e:
         print(f"⚠️ Error creando usuarios: {e}")
+        conn.rollback()
     
     conn.close()
+
+# Ruta para verificar el estado de la BD
+@app.route('/debug/db')
+def debug_db():
+    try:
+        conn = get_db_connection()
+        tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+        conn.close()
+        return f"Tablas en la BD: {[table['name'] for table in tables]}"
+    except Exception as e:
+        return f"Error: {e}"
 
 # Ruta principal - Login
 @app.route('/')
@@ -128,7 +151,7 @@ def login():
     else:
         return "❌ Credenciales incorrectas. <a href='/'>Volver</a>"
 
-# Ruta del DASHBOARD MEJORADO
+# Ruta del DASHBOARD
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -140,6 +163,12 @@ def dashboard():
         (session['user_id'],)
     ).fetchone()
     
+    # Obtener jugador asociado al usuario
+    jugador = conn.execute(
+        'SELECT * FROM jugadores WHERE usuario_id = ?',
+        (session['user_id'],)
+    ).fetchone()
+    
     # Obtener pagos del jugador
     pagos = conn.execute(
         'SELECT * FROM pagos WHERE jugador_id = ? ORDER BY mes_año DESC',
@@ -148,7 +177,7 @@ def dashboard():
     
     conn.close()
     
-    return render_template('dashboard.html', user=user, pagos=pagos)
+    return render_template('dashboard.html', user=user, jugador=jugador, pagos=pagos)
 
 # Ruta para confirmar pago
 @app.route('/confirmar_pago', methods=['POST'])
@@ -246,17 +275,65 @@ def rechazar_pago(pago_id):
     
     return redirect('/admin/pagos')
 
-if __name__ == '__main__':
-    # Crear carpeta instance si no existe
-    if not os.path.exists('instance'):
-        os.makedirs('instance')
+# Ruta de perfil
+@app.route('/perfil')
+def perfil():
+    if 'user_id' not in session:
+        return redirect('/')
     
+    conn = get_db_connection()
+    user = conn.execute(
+        'SELECT * FROM usuarios WHERE id = ?', 
+        (session['user_id'],)
+    ).fetchone()
+    
+    jugador = conn.execute(
+        'SELECT * FROM jugadores WHERE usuario_id = ?',
+        (session['user_id'],)
+    ).fetchone()
+    
+    conn.close()
+    
+    return render_template('perfil.html', user=user, jugador=jugador)
+
+# Ruta de partidos
+@app.route('/partidos')
+def partidos():
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    return render_template('partidos.html')
+
+# Ruta de pagos
+@app.route('/pagos')
+def pagos():
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    conn = get_db_connection()
+    pagos_list = conn.execute(
+        'SELECT * FROM pagos WHERE jugador_id = ? ORDER BY mes_año DESC',
+        (session['user_id'],)
+    ).fetchall()
+    
+    conn.close()
+    
+    return render_template('pagos.html', pagos=pagos_list)
+
+# Ruta de logout
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
+
+if __name__ == '__main__':
     # Verificar y crear BD si es necesario
     check_and_init_db()
     
     print("🚀 Servidor iniciado correctamente")
     print("👤 Usuario prueba: jugador@club.com / 123456")
     print("🔧 Admin prueba: admin@club.com / admin123")
+    print("🔍 Ruta debug BD: /debug/db")
     
     # PARA RENDER - CONFIGURACIÓN CLOUD
     port = int(os.environ.get('PORT', 5000))
