@@ -8,14 +8,14 @@ app.secret_key = os.environ.get('SECRET_KEY', 'clave_secreta_del_club_voley_2024
 
 # Función para conectar a la BD - CORREGIDA
 def get_db_connection():
-    # En Render.com, usa el directorio de trabajo del proyecto
-    if 'RENDER' in os.environ:
-        db_path = os.path.join(os.getcwd(), 'club_voley.db')
+    # Si estamos en Render, usar carpeta persistente
+    if os.environ.get('RENDER') == 'true':
+        db_path = '/opt/render/project/.data/club_voley.db'
     else:
         # Desarrollo local
         db_path = os.path.join(os.getcwd(), 'instance', 'club_voley.db')
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
-    
+
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
