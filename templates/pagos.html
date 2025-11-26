@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagos - Club de Voley</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/static/images/fondo-voley.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        /* MENÚ HAMBURGUESA */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            color: #2E8B57;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #2E8B57;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            transition: left 0.3s ease;
+            z-index: 1001;
+            padding: 20px;
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #2E8B57;
+        }
+
+        .close-menu {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .user-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            background: #2E8B57;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2em;
+            margin: 0 auto 15px;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 10px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            color: #333;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+
+        .nav-link:hover {
+            background: #2E8B57;
+            color: white;
+        }
+
+        .nav-link.active {
+            background: #2E8B57;
+            color: white;
+        }
+
+        .nav-icon {
+            margin-right: 15px;
+            font-size: 1.2em;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .content {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .page-header h1 {
+            color: #2E8B57;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .section-title {
+            color: #2E8B57;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #2E8B57;
+            padding-bottom: 10px;
+        }
+
+        .confirmar-pago-form {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #2E8B57;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #2E8B57;
+        }
+
+        .confirmar-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .confirmar-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .pagos-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .pagos-table th, .pagos-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .pagos-table th {
+            background: #2E8B57;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .pagos-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .estado-badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-align: center;
+            display: inline-block;
+            min-width: 120px;
+        }
+
+        .estado-pendiente {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .estado-confirmado {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .estado-validado {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .estado-rechazado {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h4 {
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        .admin-link {
+            display: block;
+            text-align: center;
+            background: #6f42c1;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 20px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .admin-link:hover {
+            background: #5a2d91;
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .pagos-table {
+                font-size: 0.9em;
+            }
+            
+            .pagos-table th, .pagos-table td {
+                padding: 10px 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Menú Hamburguesa -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">🏐 Club Voley</div>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        </div>
+    </nav>
+
+    <!-- Sidebar Menu -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>Menú</h3>
+            <button class="close-menu" onclick="toggleMenu()">×</button>
+        </div>
+        
+        <div class="user-info">
+            <div class="user-avatar">
+                {{ user.email[0].upper() }}
+            </div>
+            <div class="user-email">{{ user.email }}</div>
+            <div class="user-type">{{ user.tipo | upper }}</div>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="/dashboard" class="nav-link">
+                    <span class="nav-icon">🏠</span>
+                    Inicio
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/pagos" class="nav-link active">
+                    <span class="nav-icon">💰</span>
+                    Pagos
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/calendario" class="nav-link">
+                    <span class="nav-icon">📅</span>
+                    Calendario
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/perfil" class="nav-link">
+                    <span class="nav-icon">👤</span>
+                    Perfil
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/configuracion" class="nav-link">
+                    <span class="nav-icon">⚙️</span>
+                    Configuración
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/" class="nav-link" onclick="logout()">
+                    <span class="nav-icon">🚪</span>
+                    Cerrar Sesión
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <!-- Contenido Principal -->
+    <div class="content">
+        <!-- Header de la página -->
+        <div class="page-header card">
+            <h1>💰 Sistema de Pagos</h1>
+            <p>Gestioná y confirmá tus pagos mensuales</p>
+        </div>
+
+        <!-- Información importante -->
+        <div class="info-box">
+            <h4>💡 ¿Cómo funciona?</h4>
+            <p>1. Pagá a la profesora (efectivo/transferencia) → 2. Confirmá tu pago aquí → 3. La profesora valida el pago</p>
+        </div>
+
+        <!-- Formulario para confirmar pago -->
+        <div class="card">
+            <h2 class="section-title">✅ Confirmar Mi Pago</h2>
+            <div class="confirmar-pago-form">
+                <form action="/confirmar_pago" method="post">
+                    <div class="form-group">
+                        <label for="mes_año">Mes a Pagar:</label>
+                        <select id="mes_año" name="mes_año" required>
+                            <option value="">Seleccionar mes...</option>
+                            <option value="2025-01">Enero 2025</option>
+                            <option value="2025-02">Febrero 2025</option>
+                            <option value="2025-03">Marzo 2025</option>
+                            <option value="2025-04">Abril 2025</option>
+                            <option value="2025-05">Mayo 2025</option>
+                            <option value="2025-06">Junio 2025</option>
+                            <option value="2025-07">Julio 2025</option>
+                            <option value="2025-08">Agosto 2025</option>
+                            <option value="2025-09">Septiembre 2025</option>
+                            <option value="2025-10">Octubre 2025</option>
+                            <option value="2025-11">Noviembre 2025</option>
+                            <option value="2025-12">Diciembre 2025</option>
+                            <option value="2026-01">Enero 2026</option>
+                            <option value="2026-02">Febrero 2026</option>
+                            <option value="2026-03">Marzo 2026</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="metodo_pago">Método de Pago:</label>
+                        <select id="metodo_pago" name="metodo_pago" required>
+                            <option value="">Seleccionar método...</option>
+                            <option value="efectivo">💵 Efectivo</option>
+                            <option value="transferencia">🏦 Transferencia</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="confirmar-btn">
+                        ✅ Confirmar Pago
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Historial de Pagos -->
+        <div class="card">
+            <h2 class="section-title">📊 Mi Historial de Pagos</h2>
+            {% if pagos %}
+            <div style="overflow-x: auto;">
+                <table class="pagos-table">
+                    <thead>
+                        <tr>
+                            <th>Mes</th>
+                            <th>Método</th>
+                            <th>Estado</th>
+                            <th>Fecha Confirmación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pago in pagos %}
+                        <tr>
+                            <td><strong>{{ pago.mes_año }}</strong></td>
+                            <td>
+                                {% if pago.metodo_pago == 'efectivo' %}
+                                    💵 Efectivo
+                                {% elif pago.metodo_pago == 'transferencia' %}
+                                    🏦 Transferencia
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if pago.estado_confirmacion == 'pendiente' %}
+                                    <span class="estado-badge estado-pendiente">PENDIENTE</span>
+                                {% elif pago.estado_confirmacion == 'confirmado' %}
+                                    <span class="estado-badge estado-confirmado">CONFIRMADO</span>
+                                {% elif pago.estado_confirmacion == 'validado' %}
+                                    <span class="estado-badge estado-validado">VALIDADO ✅</span>
+                                {% elif pago.estado_confirmacion == 'rechazado' %}
+                                    <span class="estado-badge estado-rechazado">RECHAZADO</span>
+                                {% else %}
+                                    <span class="estado-badge estado-pendiente">PENDIENTE</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if pago.fecha_confirmacion %}
+                                    {{ pago.fecha_confirmacion[:10] }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <h3>📝 No hay pagos registrados</h3>
+                <p>¡Confirmá tu primer pago usando el formulario de arriba!</p>
+            </div>
+            {% endif %}
+
+            <!-- Link para admin -->
+            {% if user.tipo == 'admin' %}
+            <a href="/admin/pagos" class="admin-link">
+                🔧 Panel de Administración de Pagos
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        function logout() {
+            if (confirm('¿Estás seguro de que querés cerrar sesión?')) {
+                window.location.href = "/";
+            }
+        }
+
+        // Cerrar menú al hacer clic en un link
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                toggleMenu();
+            });
+        });
+    </script>
+</body>
+</html>
