@@ -8,7 +8,11 @@ app.secret_key = 'clave_secreta_del_club_voley_2024'
 
 # Función para conectar a la BD
 def get_db_connection():
-    conn = sqlite3.connect('instance/club_voley.db')
+    db_path = os.path.join(os.getcwd(), 'instance', 'club_voley.db')
+    
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
