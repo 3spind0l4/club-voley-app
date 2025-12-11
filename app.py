@@ -1,4 +1,4 @@
-# app.py - VERSIÓN 100% FUNCIONAL EN RENDER Y LOCAL - Diego Espindola 4°C
+# app.py - VERSIÓN FINAL 100% FUNCIONAL Y SIN ERRORES - Diego Espindola 4°C
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 import os
@@ -6,15 +6,13 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'super-secreta-club-voley-2025-diego-espindola')
+app.secret_key = os.environ.get('SECRET_KEY', 'club-voley-secreta-2025-diego-espindola-4c')
 
-# ==================== RUTA DE LA BASE DE DATOS FIJA Y SEGURA ====================
+# ====================== BASE DE DATOS ======================
 def get_db_path():
     if os.environ.get('RENDER'):
-        # En Render usamos disco persistente
         return '/opt/render/project/.data/club_voley.db'
     else:
-        # Local: carpeta instance (como antes)
         path = os.path.join(os.getcwd(), 'instance', 'club_voley.db')
         os.makedirs(os.path.dirname(path), exist_ok=True)
         return path
@@ -24,7 +22,6 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# ==================== CREAR TABLAS (se ejecuta una sola vez) ====================
 def init_db():
     conn = get_db_connection()
     conn.executescript('''
@@ -74,26 +71,20 @@ def init_db():
     ''')
 
     # Usuarios de prueba
-    try:
-        conn.execute("INSERT OR IGNORE INTO usuarios (email, password_hash, tipo) VALUES (?, ?, ?)",
-                     ('jugador@club.com', generate_password_hash('123456'), 'jugador'))
-        conn.execute("INSERT OR IGNORE INTO usuarios (email, password_hash, tipo) VALUES (?, ?, ?)",
-                     ('admin@club.com', generate_password_hash('admin123'), 'admin'))
+    conn.execute("INSERT OR IGNORE INTO usuarios (email, password_hash, tipo) VALUES (?, ?, ?)",
+                 ('jugador@club.com', generate_password_hash('123456'), 'jugador'))
+    conn.execute("INSERT OR IGNORE INTO usuarios (email, password_hash, tipo) VALUES (?, ?, ?)",
+                 ('admin@club.com', generate_password_hash('admin123'), 'admin'))
 
-        # Jugador demo
-        conn.execute("""INSERT OR IGNORE INTO jugadores 
-                        (usuario_id, nombre, apellido, telefono, posicion, categoria)
-                        VALUES ((SELECT id FROM usuarios WHERE email='jugador@club.com'), 
-                                'Lucía', 'Gómez', '1122334455', 'Armadora', 'Mayores')""")
-        conn.commit()
-        print("Base de datos creada y usuarios de prueba agregados")
-    except Exception as e:
-        print("Error al crear datos de prueba:", e)
-        conn.rollback()
-
+    # Jugador demo
+    conn.execute("""INSERT OR IGNORE INTO jugadores (usuario_id, nombre, apellido, telefono, posicion, categoria)
+                    VALUES ((SELECT id FROM usuarios WHERE email='jugador@club.com'),
+                            'Lucía', 'Gómez', '1122334455', 'Armadora', 'Mayores')""")
+    conn.commit()
     conn.close()
+    print("Base de datos inicializada correctamente")
 
-# ==================== RUTAS =================
+# ====================== RUTAS ======================
 @app.route('/')
 def home():
     if 'user_id' in session:
@@ -104,7 +95,6 @@ def home():
 def login():
     email = request.form['email'].strip().lower()
     password = request.form['password']
-
     conn = get_db_connection()
     user = conn.execute('SELECT * FROM usuarios WHERE email = ?', (email,)).fetchone()
     conn.close()
@@ -114,9 +104,8 @@ def login():
         session['user_tipo'] = user['tipo']
         session['user_email'] = user['email']
         return redirect('/dashboard')
-    else:
-        flash('Email o contraseña incorrecta', 'error')
-        return redirect('/')
+    flash('Credenciales incorrectas', 'error')
+    return redirect('/')
 
 @app.route('/logout')
 def logout():
@@ -129,38 +118,128 @@ def dashboard():
         return redirect('/')
 
     conn = get_db_connection()
-    jugador = conn.execute('''
-        SELECT j.*, u.email FROM jugadores j
-        JOIN usuarios u ON j.usuario_id = u.id
-        WHERE j.usuario_id = ?
-    ''', (session['user_id'],)).fetchone()
+    jugador = conn.execute('SELECT j.*, u.email FROM jugadores j JOIN usuarios u ON j.usuario_id = u.id WHERE j.usuario_id = ?', (session['user_id'],)).fetchone()
 
     mes_actual = datetime.now().strftime('%Y-%m')
-    pago = conn.execute('SELECT * FROM pagos WHERE jugador_id = ? AND mes_año = ?',
-                        (jugador['id'], mes_actual)).fetchone() if jugador else None
+    pago_mes = conn.execute('SELECT * FROM pagos WHERE jugador_id = ? AND mes_año = ?', (jugador['id'], mes_actual)).fetchone() if jugador else None
 
     proximos = conn.execute('SELECT * FROM entrenamientos ORDER BY fecha DESC LIMIT 4').fetchall()
     conn.close()
 
-    return render_template('dashboard.html', jugador=jugador, pago=pago, proximos=proximos)
+    return render_template('dashboard.html', jugador=jugador, pago_mes=pago_mes, proximos=proximos, mes_actual=mes_actual)
 
-# ================= PAGOS =================
+# ====================== PAGOS ======================
 @app.route('/pagos')
 def pagos():
-    # ... (el mismo código de pagos que te pasé antes)
+    if 'user_id' not in session:
+        return redirect('/')
+    conn = get_db_connection()
+    jugador = conn.execute('SELECT id FROM jugadores WHERE usuario_id = ?', (session['user_id'],)).fetchone()
+    lista_pagos = conn.execute('SELECT *, strftime("%m/%Y", mes_año) AS mes_texto FROM pagos WHERE jugador_id = ? ORDER BY mes_año DESC', (jugador['id'],)).fetchall()
+    conn.close()
+    return render_template('pagos.html', pagos=lista_pagos)
 
 @app.route('/confirmar_pago/<mes>', methods=['POST'])
 def confirmar_pago(mes):
-    # ... (igual que antes)
+    if 'user_id' not in session:
+        return redirect('/')
+    conn = get_db_connection()
+    jugador_id = conn.execute('SELECT id FROM jugadores WHERE usuario_id = ?', (session['user_id'],)).fetchone()['id']
+    conn.execute('''INSERT INTO pagos (jugador_id, mes_año, pagado, fecha_confirmacion)
+                    VALUES (?, ?, 1, ?)
+                    ON CONFLICT(jugador_id, mes_año) DO UPDATE SET pagado=1, fecha_confirmacion=?''',
+                 (jugador_id, mes, datetime.now(), datetime.now()))
+    conn.commit()
+    conn.close()
+    flash(f'Pago confirmado para {mes}', 'success')
+    return redirect('/pagos')
 
-# ================= ADMIN =================
-# ... (todas las rutas de admin, entrenamientos, asistencia igual que en el código anterior)
+# ====================== ADMIN ======================
+@app.route('/admin/pagos')
+def admin_pagos():
+    if session.get('user_tipo') != 'admin':
+        return redirect('/')
+    conn = get_db_connection()
+    pagos = conn.execute('''
+        SELECT p.*, j.nombre, j.apellido, u.email, strftime("%m/%Y", p.mes_año) AS mes_texto
+        FROM pagos p
+        JOIN jugadores j ON p.jugador_id = j.id
+        JOIN usuarios u ON j.usuario_id = u.id
+        WHERE p.pagado = 1
+        ORDER BY p.mes_año DESC
+    ''').fetchall()
+    conn.close()
+    return render_template('admin_pagos.html', pagos=pagos)
 
-# ================= INICIO =================
+@app.route('/admin/validar/<int:pago_id>')
+def validar_pago(pago_id):
+    if session.get('user_tipo') != 'admin':
+        return redirect('/')
+    conn = get_db_connection()
+    conn.execute('UPDATE pagos SET validado = 1, fecha_validacion = ? WHERE id = ?', (datetime.now(), pago_id))
+    conn.commit()
+    conn.close()
+    flash('Pago validado')
+    return redirect('/admin/pagos')
+
+# ====================== ENTRENAMIENTOS ======================
+@app.route('/entrenamientos')
+def entrenamientos():
+    if 'user_id' not in session:
+        return redirect('/')
+    conn = get_db_connection()
+    lista = conn.execute('SELECT * FROM entrenamientos ORDER BY fecha DESC').fetchall()
+
+    if session['user_tipo'] == 'admin':
+        conn.close()
+        return render_template('admin_entrenamientos.html', entrenamientos=lista)
+
+    # Jugador normal
+    jugador_id = conn.execute('SELECT id FROM jugadores WHERE usuario_id = ?', (session['user_id'],)).fetchone()['id']
+    asistencias = conn.execute('SELECT entrenamiento_id, asistio FROM asistencias WHERE jugador_id = ?', (jugador_id,)).fetchall()
+    asist_dict = {a['entrenamiento_id']: a['asistio'] for a in asistencias}
+    conn.close()
+    return render_template('entrenamientos.html', entrenamientos=lista, asist_dict=asist_dict)
+
+@app.route('/admin/crear_entrenamiento', methods=['POST'])
+def crear_entrenamiento():
+    if session.get('user_tipo') != 'admin':
+        return redirect('/')
+    fecha = request.form['fecha']
+    horario = request.form['horario']
+    desc = request.form.get('descripcion', '')
+    conn = get_db_connection()
+    conn.execute('INSERT INTO entrenamientos (fecha, horario, descripcion) VALUES (?, ?, ?)', (fecha, horario, desc))
+    conn.commit()
+    conn.close()
+    flash('Entrenamiento creado')
+    return redirect('/entrenamientos')
+
+@app.route('/confirmar_asistencia/<int:ent_id>', methods=['POST'])
+def confirmar_asistencia(ent_id):
+    if 'user_id' not in session:
+        return redirect('/')
+    conn = get_db_connection()
+    jugador_id = conn.execute('SELECT id FROM jugadores WHERE usuario_id = ?', (session['user_id'],)).fetchone()['id']
+    conn.execute('''INSERT INTO asistencias (entrenamiento_id, jugador_id, asistio)
+                    VALUES (?, ?, 1)
+                    ON CONFLICT(entrenamiento_id, jugador_id) DO UPDATE SET asistio=1''', (ent_id, jugador_id))
+    conn.commit()
+    conn.close()
+    flash('Asistencia confirmada')
+    return redirect('/entrenamientos')
+
+@app.route('/perfil')
+def perfil():
+    if 'user_id' not in session:
+        return redirect('/')
+    conn = get_db_connection()
+    jugador = conn.execute('SELECT j.*, u.email FROM jugadores j JOIN usuarios u ON j.usuario_id = u.id WHERE j.usuario_id = ?', (session['user_id'],)).fetchone()
+    conn.close()
+    return render_template('perfil.html', jugador=jugador)
+
+# ====================== INICIO ======================
 if __name__ == '__main__':
-    # Esto crea la BD la primera vez (tanto local como en Render)
-    init_db()
-
+    init_db()  # Crea la BD la primera vez
     port = int(os.environ.get('PORT', 5000))
-    # En local abre el navegador, en Render no
-    app.run(host='0.0.0.0', port=port, debug=True if not os.environ.get('RENDER') else False)
+    app.run(host='0.0.0.0', port=port, debug= not os.environ.get('RENDER'))
